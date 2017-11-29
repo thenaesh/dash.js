@@ -21,7 +21,7 @@ function QDASHRule(config) {
         TRANSITION: 1 // throughput and bitrate differ
     };
 
-    const epsilon = 0; // some buffer for rounding errors, etc
+    const epsilon = 1000; // some buffer for rounding errors, etc
 
     let qs = {
         currentState: QDashStates.STABLE,
@@ -50,6 +50,7 @@ function QDASHRule(config) {
     }
 
     function getMaxIndex (rulesContext) {
+        console.log('#### QDASHRule used ####');
         const switchRequest = SwitchRequest(context).create();
 
         if (!rulesContext || !rulesContext.hasOwnProperty('getMediaType')) {
@@ -89,31 +90,45 @@ function QDASHRule(config) {
             qs.throughputDelta = qs.currentThroughput - qs.oldThroughput;
 
             var getIntermediateQualityIdx = function (br0, br1) {
-                const q0 = abrController.getQualityForBitrate(mediaInfo, br0, latency);
-                const q1 = abrController.getQualityForBitrate(mediaInfo, br1, latency);
+                const q0 = abrController.getQualityForBitrate(mediaInfo, br0, 0);
+                const q1 = abrController.getQualityForBitrate(mediaInfo, br1, 0);
                 return Math.floor((q0 + q1) / 2); // some quality index between the two
             };
 
             switch (qs.currentState) {
                 case QDashStates.STABLE:
-                    if (qs.throughputDelta < -epsilon || qs.throughputDelta > epsilon) {
+                    console.log('#### QDASH: Stable ####');
+                    if (qs.throughputDelta < -epsilon) {
                         // throughput has changed
                         qs.oldBitrate = qs.oldThroughput;
                         qs.newBitrate = qs.currentThroughput;
                         const intermediateQualityIdx = getIntermediateQualityIdx(qs.oldBitrate, qs.newBitrate);
-                        const intermediateBitrate = bitrateList[intermediateQualityIdx] / 1000;
+                        const intermediateBitrate = bitrateList[intermediateQualityIdx].bitrate / 1000;
+                        console.log('#### old quality = ' + qs.oldBitrate);
+                        console.log('#### intermediate bitrate = ' + intermediateBitrate);
+                        console.log('#### new quality = ' + qs.newBitrate);
                         qs.sfrag = intermediateBitrate * fragmentDuration;
                         qs.tbuffer = bufferLevel;
-                        qs.nfrag = qs.tbuffer * qs.newBitrate / qs.sfrag;
+                        qs.nfrag = Math.floor(qs.tbuffer * qs.newBitrate / qs.sfrag);
                         qs.currentState = QDashStates.TRANSITION;
                         switchRequest.quality = intermediateQualityIdx;
+                        console.log('QDASH: high -> transition');
+                    } else if (qs.throughputDelta > epsilon) {
+                        qs.oldBitrate = qs.oldThroughput;
+                        qs.newBitrate = qs.currentThroughput;
+                        const newQualityIdx = abrController.getQualityForBitrate(mediaInfo, qs.newBitrate, 0);
+                        switchRequest.quality = newQualityIdx;
+                        console.log('QDASH: low -> high');
                     }
                     break;
                 case QDashStates.TRANSITION:
+                    console.log('#### QDASH Transition ####');
+                    console.log(' #### nfrag = ' + qs.nfrag + ' ####');
                     if (qs.nfrag <= 0) {
                         // out of runway
                         switchRequest.quality = abrController.getQualityForBitrate(mediaInfo, qs.newBitrate, latency);
                         qs.currentState = QDashStates.STABLE;
+                        console.log('QDASH: transition -> low');
                     } else {
                         qs.nfrag -= 1;
                     }

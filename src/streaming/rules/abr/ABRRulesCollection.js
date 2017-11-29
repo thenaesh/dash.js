@@ -28,12 +28,7 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-import ThroughputRule from './ThroughputRule';
-import InsufficientBufferRule from './InsufficientBufferRule';
-import AbandonRequestsRule from './AbandonRequestsRule';
-import DroppedFramesRule from './DroppedFramesRule.js';
-import SwitchHistoryRule from './SwitchHistoryRule.js';
-import BolaRule from './BolaRule';
+import QDASHRule from './QDASHRule';
 import FactoryMaker from '../../../core/FactoryMaker';
 import SwitchRequest from '../SwitchRequest.js';
 
@@ -61,12 +56,13 @@ function ABRRulesCollection(config) {
             // Only one of BolaRule and ThroughputRule will give a switchRequest.quality !== SwitchRequest.NO_CHANGE.
             // This is controlled by useBufferOccupancyABR mechanism in AbrController.
             qualitySwitchRules.push(
-                BolaRule(context).create({
+                QDASHRule(context).create({
                     metricsModel: metricsModel,
                     dashMetrics: dashMetrics,
                     mediaPlayerModel: mediaPlayerModel
                 })
             );
+            /*
             qualitySwitchRules.push(
                 ThroughputRule(context).create({
                     metricsModel: metricsModel,
@@ -92,6 +88,7 @@ function ABRRulesCollection(config) {
                     mediaPlayerModel: mediaPlayerModel
                 })
             );
+            */
         }
 
         // add custom ABR rules if any

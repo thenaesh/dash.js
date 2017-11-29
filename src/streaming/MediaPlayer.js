@@ -1162,7 +1162,7 @@ function MediaPlayer() {
      * @instance
      */
     function setABRStrategy(value) {
-        if (value === Constants.ABR_STRATEGY_DYNAMIC || value === Constants.ABR_STRATEGY_BOLA || value === Constants.ABR_STRATEGY_THROUGHPUT) {
+        if (value === Constants.ABR_STRATEGY_DYNAMIC || value === Constants.ABR_STRATEGY_QDASH || value === Constants.ABR_STRATEGY_BOLA || value === Constants.ABR_STRATEGY_THROUGHPUT) {
             mediaPlayerModel.setABRStrategy(value);
         } else {
             log('Warning: Ignoring setABRStrategy(' + value + ') - unknown value.');
